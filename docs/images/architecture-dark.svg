@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 400" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7d869e"/></marker></defs>
+<style>.box{fill:#1b2030;stroke:#323a55;stroke-width:1.2}.hot{fill:#252a55;stroke:#7b7bff;stroke-width:1.6}.safe{fill:#35261d;stroke:#e8954a;stroke-width:1.6}
+.t{fill:#eef0f8;font-size:17px;font-weight:600}.s{fill:#a3aac2;font-size:14px}.h{fill:#7d86a6;font-size:12px;font-weight:700;letter-spacing:1.5px}.ln{stroke:#7d869e;stroke-width:1.8;fill:none}</style>
+
+<text x="24" y="38" class="h">YOU SAY AND SEE</text><text x="270" y="38" class="h">BUDDY (ON YOUR MAC)</text><text x="752" y="38" class="h">YOU GET</text>
+<rect x="20" y="56" width="220" height="72" rx="12" class="box"/><text x="38" y="86" class="t">“Hey Buddy, …”</text><text x="38" y="109" class="s">your voice</text>
+<rect x="20" y="180" width="220" height="72" rx="12" class="box"/><text x="38" y="210" class="t">Your screen</text><text x="38" y="233" class="s">screenshot + its controls</text>
+<rect x="270" y="56" width="200" height="72" rx="12" class="box"/><text x="288" y="86" class="t">Ears</text><text x="288" y="109" class="s">wake word + Whisper</text>
+<rect x="270" y="180" width="440" height="92" rx="12" class="hot"/><text x="288" y="210" class="t">Claude Code</text><text x="288" y="233" class="s">your subscription; MCP connectors,</text>
+<text x="288" y="256" class="s">files, shell, web, memory, your shortcuts</text>
+<rect x="270" y="304" width="440" height="72" rx="12" class="safe"/><text x="288" y="334" class="t">Needs your OK</text><text x="288" y="357" class="s">Touch ID before risky actions</text>
+<rect x="750" y="56" width="210" height="64" rx="12" class="box"/><text x="768" y="86" class="t">Voice</text><text x="768" y="109" class="s">Kokoro, local</text>
+<rect x="750" y="134" width="210" height="64" rx="12" class="box"/><text x="768" y="164" class="t">Chat panel</text><text x="768" y="187" class="s">Markdown + LaTeX</text>
+<rect x="750" y="212" width="210" height="64" rx="12" class="box"/><text x="768" y="242" class="t">Pen layer</text><text x="768" y="265" class="s">circles, arrows, notes</text>
+<rect x="750" y="304" width="210" height="72" rx="12" class="box"/><text x="768" y="334" class="t">Clicks + typing</text><text x="768" y="357" class="s">by control name</text>
+<path d="M240 92 H268" class="ln" marker-end="url(#a)"/>
+<path d="M370 128 V178" class="ln" marker-end="url(#a)"/>
+<path d="M240 216 H268" class="ln" marker-end="url(#a)"/>
+<path d="M710 205 C730 205 728 88 748 88" class="ln" marker-end="url(#a)"/>
+<path d="M710 215 C730 215 728 166 748 166" class="ln" marker-end="url(#a)"/>
+<path d="M710 230 C730 230 728 244 748 244" class="ln" marker-end="url(#a)"/>
+<path d="M490 272 V302" class="ln" marker-end="url(#a)"/>
+<path d="M710 340 H748" class="ln" marker-end="url(#a)"/>
+</svg>

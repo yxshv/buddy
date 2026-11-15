@@ -1,0 +1,10 @@
+{
+  "command": "project",
+  "title": "Open a project",
+  "summary": "Open one of their project folders in VS Code by name, the way they jump with zoxide (cs, cf, ke…).",
+  "usage": "NAME…",
+  "phrases": ["open my CS stuff", "open the cf folder", "open drift"],
+  "permission": "allow",
+  "run": "run.sh",
+  "guidance": "Pass the short name they said (\"my CS stuff\" is cs). Say which folder opened."
+}

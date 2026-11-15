@@ -1,0 +1,78 @@
+/* Markdown and math typography shared by the canvas notes, the chat panel and the chats window.
+   Pages set --muted, --rule, --code-bg and --c (accent). */
+.md h1, .md h2, .md h3 { margin: 0 0 0.45em; line-height: 1.2; letter-spacing: -0.012em; }
+.md h1 { font-size: 1.3em; font-weight: 700; }
+.md h2 { font-size: 1.15em; font-weight: 650; }
+.md h3 { font-size: 1.02em; font-weight: 650; color: var(--muted); }
+.md p { margin: 0 0 0.6em; }
+.md ul, .md ol { margin: 0 0 0.6em; padding-left: 1.35em; }
+.md li { margin: 0.18em 0; }
+.md li::marker { color: var(--muted); }
+.md hr { border: 0; border-top: 1px solid var(--rule); margin: 0.8em 0; }
+.md code { font: 0.88em ui-monospace, "SF Mono", Menlo, monospace; background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 5px; }
+.md strong { font-weight: 650; }
+
+/* Fenced code blocks, highlighted by markdown.js. Token colours follow Xcode's default themes. */
+.md {
+  --tk-kw: #9b2393; --tk-str: #c41a16; --tk-num: #1c00cf; --tk-com: #5d6c79; --tk-type: #0b4f79;
+  --tk-fn: #326d74; --tk-bi: #6c36a9; --tk-meta: #643820; --tk-prop: #0e6a8c; --tk-ins: #1a7f37; --tk-del: #cf222e;
+}
+@media (prefers-color-scheme: dark) {
+  .md {
+    --tk-kw: #fc5fa3; --tk-str: #fc6a5d; --tk-num: #d0bf69; --tk-com: #7f8c98; --tk-type: #5dd8ff;
+    --tk-fn: #67b7a4; --tk-bi: #b281eb; --tk-meta: #fd8f3f; --tk-prop: #41a1c0; --tk-ins: #56d364; --tk-del: #ff7b72;
+  }
+}
+.md .code {
+  margin: 0.2em 0 0.75em;
+  border-radius: 10px;
+  background: var(--code-bg);
+  overflow: hidden;
+}
+.md .code-lang {
+  padding: 7px 12px 0;
+  font: 600 10.5px/1.4 -apple-system, system-ui, sans-serif;
+  letter-spacing: 0.03em;
+  text-transform: lowercase;
+  color: var(--muted);
+  user-select: none;
+}
+.md .code pre {
+  margin: 0;
+  padding: 10px 12px 11px;
+  font: 12.5px/1.55 ui-monospace, "SF Mono", Menlo, monospace;
+  white-space: pre;
+  tab-size: 4;
+  overflow-x: auto;
+  overflow-y: hidden;
+  user-select: text;
+  cursor: text;
+}
+.md .code-lang + pre { padding-top: 4px; }
+.md .code code { font: inherit; background: none; padding: 0; border-radius: 0; }
+.tk-kw { color: var(--tk-kw); font-weight: 600; }
+.tk-lit { color: var(--tk-kw); }
+.tk-str { color: var(--tk-str); }
+.tk-num { color: var(--tk-num); }
+.tk-com { color: var(--tk-com); font-style: italic; }
+.tk-type { color: var(--tk-type); }
+.tk-fn { color: var(--tk-fn); }
+.tk-bi { color: var(--tk-bi); }
+.tk-meta, .tk-tag { color: var(--tk-meta); }
+.tk-prop, .tk-attr { color: var(--tk-prop); }
+.tk-op { color: var(--muted); }
+.tk-ins { color: var(--tk-ins); }
+.tk-del { color: var(--tk-del); }
+.md mark { background: color-mix(in srgb, var(--c) 28%, transparent); color: inherit; border-radius: 3px; padding: 0 0.15em; }
+.md .math-block { margin: 0.5em 0 0.75em; overflow-x: auto; overflow-y: hidden; text-align: center; padding: 0.15em 0; }
+.md > :last-child, .md .blk:last-child > :last-child { margin-bottom: 0; }
+.md .katex { font-size: 1.1em; }
+.md .math-block .katex { font-size: 1.18em; }
+.md .katex-error { color: var(--c); font: 0.9em ui-monospace, Menlo, monospace; }
+
+/* Writing: each block is wiped in left to right, one after another. */
+.blk { clip-path: inset(-0.3em 100% -0.3em 0); animation: write var(--dur, 400ms) cubic-bezier(0.4, 0, 0.3, 1) var(--delay, 0ms) forwards; }
+@keyframes write { to { clip-path: inset(-0.3em -2px -0.3em 0); } }
+@media (prefers-reduced-motion: reduce) {
+  .blk { animation: none; clip-path: none; }
+}

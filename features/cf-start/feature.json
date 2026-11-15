@@ -1,0 +1,10 @@
+{
+  "command": "cf-start",
+  "title": "Start a Codeforces problem",
+  "summary": "Set up the Codeforces problem on screen: make its solution file from their template, save its samples, and open it in Neovim in a new Ghostty tab.",
+  "usage": "[PROBLEM]  (samples piped in)",
+  "phrases": ["set up this problem", "let's solve this", "prepare this problem", "start this one"],
+  "permission": "allow",
+  "run": "run.sh",
+  "guidance": "Pass the problem ID (like 2276C) if the URL isn't on screen, and pipe the samples copied exactly from the page as `=== input`, its lines, `=== output`, its lines; then just say \"Ready.\""
+}

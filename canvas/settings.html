@@ -1,0 +1,397 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>Buddy Settings</title>
+<style>
+  /* Buddy's Features & Permissions window. Same tokens as chats.html; the sidebar is transparent over the
+     window's native sidebar material. Rows are dense and still (selection and hover don't animate: you do
+     them all day); only things that appear (a flash message, a new row) fade in. */
+  :root {
+    --bg: #ffffff;
+    --ink: #1d1d1f;
+    --muted: #6e6e73;
+    --faint: #a1a1a6;
+    --rule: rgba(0, 0, 0, 0.08);
+    --row-hover: rgba(0, 0, 0, 0.04);
+    --row-sel: rgba(0, 0, 0, 0.08);
+    --field: rgba(0, 0, 0, 0.05);
+    --card: #f5f5f7;
+    --seg: rgba(0, 0, 0, 0.06);
+    --seg-on: #ffffff;
+    --seg-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+    --c: #0A84FF;
+    --warn: #c93400;
+    --ok: #1a7f37;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e20;
+      --ink: #f5f5f7;
+      --muted: #98989d;
+      --faint: #6e6e73;
+      --rule: rgba(255, 255, 255, 0.08);
+      --row-hover: rgba(255, 255, 255, 0.05);
+      --row-sel: rgba(255, 255, 255, 0.1);
+      --field: rgba(255, 255, 255, 0.07);
+      --card: rgba(255, 255, 255, 0.04);
+      --seg: rgba(255, 255, 255, 0.07);
+      --seg-on: rgba(255, 255, 255, 0.18);
+      --seg-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.4);
+      --warn: #ff9f0a;
+      --ok: #30d158;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body {
+    display: flex;
+    font: 13px/1.45 -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    cursor: default;
+    overflow: hidden;
+    user-select: none;
+  }
+  button { font: inherit; color: inherit; }
+  :focus { outline: none; }
+  :focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 40%, transparent); border-radius: 7px; }
+
+  /* ---- Sidebar ---- */
+  aside { width: 210px; flex: none; padding: 52px 10px 10px; display: flex; flex-direction: column; gap: 2px; }
+  .nav {
+    display: flex; align-items: center; gap: 9px;
+    width: 100%; height: 30px; padding: 0 10px;
+    border: 0; border-radius: 7px; background: transparent; text-align: left;
+    font-size: 13px; font-weight: 500;
+  }
+  .nav:hover { background: var(--row-hover); }
+  .nav.sel { background: var(--row-sel); }
+  .nav i { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; flex: none; color: #fff; font-style: normal; font-size: 11px; }
+  .nav .n { margin-left: auto; color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .ic-features { background: linear-gradient(#5e9cff, #0a84ff); }
+  .ic-perms { background: linear-gradient(#ffb340, #ff9500); }
+  aside .foot { margin-top: auto; padding: 10px; font-size: 11.5px; color: var(--faint); line-height: 1.4; }
+
+  /* ---- Page ---- */
+  main { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--bg); border-left: 1px solid var(--rule); }
+  header {
+    flex: none; height: 52px; padding: 0 22px 0 24px;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid var(--rule);
+  }
+  header h1 { margin: 0; font-size: 14px; font-weight: 650; white-space: nowrap; }
+  header .grow { flex: 1; }
+  #search {
+    width: 200px; min-width: 90px; flex: 0 1 200px; height: 28px; padding: 0 10px 0 27px;
+    border: 0; border-radius: 7px; background: var(--field) no-repeat 9px center / 12px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l3.5 3.5'/%3E%3C/svg%3E");
+    font: inherit; color: var(--ink);
+  }
+  #search:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent); }
+  .btn {
+    height: 28px; padding: 0 12px; border: 0; border-radius: 7px;
+    background: var(--field); font-weight: 550; white-space: nowrap;
+  }
+  .btn:hover { background: var(--row-sel); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--c); color: #fff; }
+  .btn.primary:hover { background: color-mix(in srgb, var(--c) 88%, black); }
+  .btn.danger { color: var(--warn); }
+  #page { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+  .inner { max-width: 720px; margin: 0 auto; padding: 18px 28px 40px; }
+  .intro { margin: 2px 0 18px; color: var(--muted); font-size: 13px; line-height: 1.5; max-width: 60ch; }
+  .intro code, .detail code, .path code { font: 11.5px ui-monospace, "SF Mono", Menlo, monospace; background: var(--field); padding: 1px 5px; border-radius: 4px; user-select: text; }
+
+  /* A grouped list, like System Settings. */
+  h2 { margin: 22px 4px 7px; font-size: 12px; font-weight: 600; color: var(--muted); }
+  h2:first-child { margin-top: 4px; }
+  .group { border-radius: 10px; background: var(--card); border: 0.5px solid var(--rule); overflow: hidden; }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 11px 14px; min-height: 52px; }
+  .row + .row { border-top: 0.5px solid var(--rule); }
+  /* The text keeps at least ~30 characters; when the control doesn't fit beside it, it drops below. */
+  .row .tx { flex: 1 1 220px; min-width: 0; }
+  .row .seg, .row .lock { margin-left: auto; }
+  .feature .tx { flex-basis: 200px; }
+  .row .t { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .row .d { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .row.off .t, .row.off .d { opacity: 0.55; }
+  .tag { font-size: 10.5px; font-weight: 600; padding: 1px 6px; border-radius: 5px; background: var(--field); color: var(--muted); }
+  .tag.bad { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); }
+
+  /* Segmented control: levels ordered strictest → loosest, the current one raised. */
+  .seg { flex: none; display: inline-flex; padding: 2px; gap: 2px; border-radius: 8px; background: var(--seg); }
+  .seg button {
+    height: 24px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent;
+    font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap;
+  }
+  .seg button:hover:not(.on) { color: var(--ink); }
+  .seg button.on { background: var(--seg-on); color: var(--ink); box-shadow: var(--seg-shadow); font-weight: 600; }
+  .seg button.on[data-level="off"] { color: var(--muted); }
+  /* Orange only where "Never ask" skips a check that would otherwise happen (commands, file edits). */
+  .seg.hot button.on[data-level="allow"] { color: var(--warn); }
+  .seg button:disabled { cursor: default; }
+  .lock { flex: none; font-size: 12px; font-weight: 600; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .lock svg { width: 11px; height: 11px; fill: currentColor; opacity: 0.8; }
+
+  /* Feature cards: one per feature, expandable for its details. */
+  .feature { cursor: default; }
+  .feature .chev { flex: none; width: 18px; height: 18px; border: 0; background: transparent; color: var(--faint); padding: 0; border-radius: 5px; }
+  .feature .chev svg { width: 10px; height: 10px; transition: transform 160ms var(--ease-out); }
+  .feature.open .chev svg { transform: rotate(90deg); }
+  .more { display: none; padding: 0 14px 14px 46px; font-size: 12px; color: var(--muted); }
+  .feature.open + .more { display: block; }
+  .more dl { margin: 0 0 10px; display: grid; grid-template-columns: 90px 1fr; gap: 5px 12px; }
+  .more dt { color: var(--faint); }
+  .more dd { margin: 0; color: var(--ink); user-select: text; overflow-wrap: anywhere; }
+  .more .acts { display: flex; gap: 8px; }
+  .problem { color: var(--warn); font-size: 12px; margin-top: 3px; }
+  .tag.new { background: color-mix(in srgb, var(--c) 14%, transparent); color: var(--c); }
+  .banner { margin: 0 0 16px; padding: 10px 14px; border-radius: 10px; font-size: 12.5px; line-height: 1.45;
+    background: color-mix(in srgb, var(--warn) 12%, transparent); color: var(--ink); border: 0.5px solid color-mix(in srgb, var(--warn) 30%, transparent); }
+  .banner b { color: var(--warn); }
+  .banner .btn { height: 24px; margin-left: 4px; vertical-align: middle; }
+
+  .empty { padding: 40px 20px; text-align: center; color: var(--muted); }
+  .empty b { display: block; color: var(--ink); font-size: 14px; margin-bottom: 4px; }
+
+  /* New feature: an inline field instead of a dialog. */
+  #new { display: none; gap: 8px; align-items: center; padding: 10px 14px; margin-bottom: 14px; border-radius: 10px; background: var(--card); border: 0.5px solid var(--rule); }
+  #new.show { display: flex; animation: in 220ms var(--ease-out) both; }
+  #new input { flex: 1; height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: var(--field); font: inherit; color: var(--ink); }
+  #new input:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent); }
+
+  /* One-line feedback under the header ("Added…", "Moved to the Trash"). */
+  #flash {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    padding: 8px 14px; border-radius: 9px; max-width: 70%;
+    background: color-mix(in srgb, var(--ink) 88%, transparent); color: var(--bg);
+    font-size: 12.5px; font-weight: 550; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    opacity: 0; pointer-events: none; transition: opacity 180ms ease, transform 220ms var(--ease-out);
+  }
+  #flash.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+  @keyframes in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    #new.show { animation: none; }
+    #flash { transition: opacity 120ms ease; transform: translateX(-50%); }
+    #flash.show { transform: translateX(-50%); }
+    .feature .chev svg { transition: none; }
+  }
+</style>
+</head>
+<body>
+<aside>
+  <button class="nav" data-section="features"><i class="ic-features">✦</i>Features<span class="n" id="n-features"></span></button>
+  <button class="nav" data-section="permissions"><i class="ic-perms">✓</i>Permissions</button>
+  <div class="foot">Loosening a permission, or adding or removing a feature, asks for Touch ID.</div>
+</aside>
+<main>
+  <header>
+    <h1 id="title">Features</h1>
+    <span class="grow"></span>
+    <input id="search" type="search" placeholder="Search" autocomplete="off" spellcheck="false">
+    <button class="btn primary" id="add">New Feature</button>
+  </header>
+  <div id="page"><div class="inner" id="content"></div></div>
+</main>
+<div id="flash"></div>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const post = (m) => window.webkit?.messageHandlers?.buddy?.postMessage(m);
+  const lockIcon = '<svg viewBox="0 0 12 14"><path d="M3 6V4a3 3 0 0 1 6 0v2h.5A1.5 1.5 0 0 1 11 7.5v5A1.5 1.5 0 0 1 9.5 14h-7A1.5 1.5 0 0 1 1 12.5v-5A1.5 1.5 0 0 1 2.5 6H3zm1.5 0h3V4a1.5 1.5 0 0 0-3 0v2z"/></svg>';
+  const chevron = '<svg viewBox="0 0 10 10"><path d="M3 1.5 6.5 5 3 8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  let state = { features: [], groups: [], fixed: [], userDir: "" };
+  let section = "features";
+  const open = new Set(); // expanded features, kept across reloads
+
+  function seg(key, level, levels) {
+    const hot = levels.some((l) => l.id === "risky") && levels.some((l) => l.id === "allow");
+    return `<div class="seg${hot ? " hot" : ""}" role="radiogroup">` + levels.map((l) =>
+      `<button role="radio" aria-checked="${l.id === level}" class="${l.id === level ? "on" : ""}" data-key="${esc(key)}" data-level="${l.id}">${esc(l.title)}</button>`
+    ).join("") + `</div>`;
+  }
+
+  const query = () => $("search").value.trim().toLowerCase();
+  const hit = (q, ...texts) => !q || texts.some((t) => String(t ?? "").toLowerCase().includes(q));
+
+  const banner = () => state.tampered
+    ? `<div class="banner"><b>Buddy's settings were changed outside Buddy</b> (edited, replaced or deleted), so until you check them, everything asks first and looking at or drawing on the screen is off. Set the rows below, or <button class="btn" data-restore="1">Restore Defaults…</button></div>` : "";
+
+  function renderFeatures() {
+    const q = query();
+    const list = state.features.filter((f) => hit(q, f.title, f.summary, f.command, ...(f.phrases || [])));
+    let html = `<p class="intro">Shortcuts Buddy runs in one go when you ask for them. Each is a folder with a
+      <code>feature.json</code> and a script; yours live in <code>${esc(state.userDir.replace(/^\/Users\/[^/]+/, "~"))}</code>.
+      After an edit, approve it again with Touch ID before it runs.</p>` + banner();
+    html += `<div id="new"><input id="new-name" placeholder="Name, e.g. Lint this file" spellcheck="false"><button class="btn" id="new-cancel">Cancel</button><button class="btn primary" id="new-go">Create</button></div>`;
+    if (!list.length) {
+      html += state.features.length
+        ? `<div class="empty"><b>No features match “${esc($("search").value.trim())}”</b>Try a command name or something you'd say.</div>`
+        : `<div class="empty"><b>No features yet</b>Choose New Feature, or ask Buddy to make one.</div>`;
+      return html;
+    }
+    html += `<div class="group">`;
+    for (const f of list) {
+      const off = f.level === "off" || f.problem;
+      const waiting = !f.problem && !f.trusted;
+      html += `<div class="row feature${open.has(f.id) ? " open" : ""}${off ? " off" : ""}" data-id="${esc(f.id)}">
+        <button class="chev" aria-label="Details" data-toggle="${esc(f.id)}">${chevron}</button>
+        <div class="tx">
+          <div class="t">${esc(f.title)}${f.builtIn ? `<span class="tag">Built in</span>` : ""}${f.problem ? `<span class="tag bad">Needs fixing</span>` : ""}${waiting ? `<span class="tag new">Needs your approval</span>` : ""}</div>
+          <div class="d">${esc(f.summary)}</div>
+          ${f.problem ? `<div class="problem">${esc(f.problem)}</div>` : ""}
+          ${waiting ? `<div class="d">New or changed since you approved it, so it won't run yet.</div>` : ""}
+        </div>
+        ${f.problem ? "" : waiting ? `<button class="btn primary" data-approve="${esc(f.id)}">Approve…</button>` : seg(f.key, f.level, f.levels)}
+      </div>
+      <div class="more">
+        <dl>
+          <dt>Command</dt><dd><code>${esc(f.usage)}</code></dd>
+          ${f.phrases?.length ? `<dt>You might say</dt><dd>${f.phrases.map((p) => `“${esc(p)}”`).join(", ")}</dd>` : ""}
+          <dt>Folder</dt><dd>${esc(f.path.replace(/^\/Users\/[^/]+/, "~"))}</dd>
+        </dl>
+        <div class="acts">
+          <button class="btn" data-reveal="${esc(f.path)}">Show in Finder</button>
+          ${f.builtIn ? "" : `<button class="btn danger" data-remove="${esc(f.id)}">Remove…</button>`}
+        </div>
+      </div>`;
+    }
+    return html + `</div>`;
+  }
+
+  function renderPermissions() {
+    const q = query();
+    let html = `<p class="intro">What Buddy may do on its own. <b>Ask when risky</b> runs everyday steps and asks before
+      changes; after one yes, the rest of that request runs. <b>Always ask</b> asks for every step. Some things always ask,
+      whatever is set here.</p>` + banner();
+    let any = false;
+    for (const g of state.groups) {
+      const rows = g.rows.filter((r) => hit(q, r.title, r.detail, g.title));
+      if (!rows.length) continue;
+      any = true;
+      html += `<h2>${esc(g.title)}</h2><div class="group">` + rows.map((r) =>
+        `<div class="row${r.level === "off" ? " off" : ""}"><div class="tx"><div class="t">${esc(r.title)}</div><div class="d">${esc(r.detail)}</div></div>${seg(r.key, r.level, r.levels)}</div>`
+      ).join("") + `</div>`;
+    }
+    const features = state.features.filter((f) => !f.problem && f.trusted && hit(q, f.title, "features"));
+    if (features.length) {
+      any = true;
+      html += `<h2>Features</h2><div class="group">` + features.map((f) =>
+        `<div class="row${f.level === "off" ? " off" : ""}"><div class="tx"><div class="t">${esc(f.title)}</div><div class="d"><code>${esc(f.usage)}</code></div></div>${seg(f.key, f.level, f.levels)}</div>`
+      ).join("") + `</div>`;
+    }
+    const fixed = state.fixed.filter((r) => hit(q, r.title, r.detail));
+    if (fixed.length) {
+      any = true;
+      html += `<h2>Always</h2><div class="group">` + fixed.map((r) =>
+        `<div class="row"><div class="tx"><div class="t">${esc(r.title)}</div><div class="d">${esc(r.detail)}</div></div><span class="lock">${lockIcon}${esc(r.level)}</span></div>`
+      ).join("") + `</div>`;
+    }
+    if (!any) html += `<div class="empty"><b>Nothing matches “${esc($("search").value.trim())}”</b></div>`;
+    return html;
+  }
+
+  function render(keepScroll = true) {
+    const page = $("page"), top = page.scrollTop;
+    const focused = document.activeElement?.dataset?.key && `[data-key="${document.activeElement.dataset.key}"][data-level="${document.activeElement.dataset.level}"]`;
+    document.querySelectorAll(".nav").forEach((b) => b.classList.toggle("sel", b.dataset.section === section));
+    $("title").textContent = section === "features" ? "Features" : "Permissions";
+    $("add").hidden = section !== "features";
+    $("n-features").textContent = state.features.length || "";
+    $("content").innerHTML = section === "features" ? renderFeatures() : renderPermissions();
+    if (keepScroll) page.scrollTop = top;
+    if (focused) document.querySelector(focused)?.focus(); // keep keyboard focus through a re-render
+  }
+
+  let flashTimer;
+  function flash(text) {
+    const el = $("flash");
+    el.textContent = text;
+    el.classList.add("show");
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => el.classList.remove("show"), 3200);
+  }
+
+  function showNew(on) {
+    const box = $("new");
+    if (!box) return;
+    box.classList.toggle("show", on);
+    if (on) { $("new-name").value = ""; $("new-name").focus(); }
+  }
+  function createNew() {
+    const name = $("new-name").value.trim();
+    if (!name) return;
+    post({ do: "new", name });
+    showNew(false);
+  }
+
+  window.settings = {
+    // state from SettingsWindow.state(); pick switches to a section; note shows a one-line message.
+    load(next, pick, note) {
+      state = next;
+      if (pick) { section = pick; $("search").value = ""; }
+      render(!pick);
+      if (pick) $("page").scrollTop = 0;
+      if (note) flash(note);
+    },
+  };
+
+  document.addEventListener("click", (e) => {
+    const t = e.target.closest("button, .feature");
+    if (!t) return;
+    if (t.dataset.section) { section = t.dataset.section; $("search").value = ""; render(false); return; }
+    if (t.dataset.level) {
+      if (t.classList.contains("on")) return;
+      // Show the choice at once; the app pushes the real state back (the old one if Touch ID is cancelled).
+      t.parentElement.querySelectorAll("button").forEach((b) => { b.classList.toggle("on", b === t); b.setAttribute("aria-checked", b === t); });
+      post({ do: "level", key: t.dataset.key, level: t.dataset.level });
+      return;
+    }
+    if (t.dataset.reveal) { post({ do: "reveal", path: t.dataset.reveal }); return; }
+    if (t.dataset.approve) { post({ do: "approve", id: t.dataset.approve }); return; }
+    if (t.dataset.restore) { post({ do: "restore" }); return; }
+    if (t.dataset.remove) { post({ do: "remove", id: t.dataset.remove }); return; }
+    if (t.id === "add") { showNew(true); return; }
+    if (t.id === "new-go") { createNew(); return; }
+    if (t.id === "new-cancel") { showNew(false); return; }
+    // Clicking a feature row (or its chevron) opens its details.
+    const row = t.dataset.toggle ? t.closest(".feature") : t.classList.contains("feature") ? t : null;
+    if (row) {
+      const id = row.dataset.id;
+      open.has(id) ? open.delete(id) : open.add(id);
+      row.classList.toggle("open", open.has(id));
+    }
+  });
+
+  $("search").addEventListener("input", () => render(false));
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey && e.key === "f") { e.preventDefault(); $("search").focus(); $("search").select(); return; }
+    if (e.metaKey && e.key === "n" && section === "features") { e.preventDefault(); showNew(true); return; }
+    if (e.target.id === "new-name") {
+      if (e.key === "Enter") { e.preventDefault(); createNew(); }
+      if (e.key === "Escape") { e.preventDefault(); showNew(false); }
+      return;
+    }
+    if (e.key === "Escape" && document.activeElement === $("search")) { $("search").value = ""; render(false); $("search").blur(); return; }
+    // Left/Right move along a segmented control, like a native one.
+    const b = document.activeElement;
+    if (b?.dataset?.level && (e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+      e.preventDefault();
+      const next = e.key === "ArrowLeft" ? b.previousElementSibling : b.nextElementSibling;
+      next?.focus();
+      next?.click();
+    }
+    // ⌘1 / ⌘2 switch sections.
+    if (e.metaKey && (e.key === "1" || e.key === "2")) { e.preventDefault(); section = e.key === "1" ? "features" : "permissions"; render(false); }
+  });
+
+  post("ready");
+})();
+</script>
+</body>
+</html>

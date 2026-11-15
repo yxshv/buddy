@@ -1,0 +1,19 @@
+# Build output
+build/
+*.o
+*.dSYM/
+
+# macOS
+.DS_Store
+
+# Local models and Python environments (downloaded by the setup steps, never committed)
+*.onnx
+*.bin
+venv/
+__pycache__/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Personal settings (see local.env.example)
+local.env

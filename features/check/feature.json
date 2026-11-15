@@ -1,0 +1,14 @@
+{
+  "command": "check",
+  "title": "Check my C++ challenge",
+  "summary": "Run the checker on the C++ challenge they're working on and report pass or fail.",
+  "usage": "[PREFIX]",
+  "phrases": [
+    "check it",
+    "check my challenge",
+    "did F03 pass"
+  ],
+  "permission": "allow",
+  "run": "run.sh",
+  "guidance": "Say pass or fail in one sentence; on a fail put only the failing lines it printed on a BOARD. Never add C++ syntax, explain the bug or change their code."
+}

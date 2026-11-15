@@ -1,0 +1,15 @@
+{
+  "command": "cf-test",
+  "title": "Run Codeforces samples",
+  "summary": "Compile their Codeforces solution and run it on the problem's sample tests, reporting which pass.",
+  "usage": "[PROBLEM]  (samples piped in)",
+  "phrases": [
+    "test my solution",
+    "run the samples",
+    "does 2276A pass"
+  ],
+  "permission": "allow",
+  "run": "run.sh",
+  "timeout": 60,
+  "guidance": "Pipe each sample copied exactly from the problem page as `=== input`, its lines, `=== output`, its lines (saved samples can be omitted later); say its result in one sentence (pass, fail, crash or compile error, with the line it gives) and never explain or change their code."
+}

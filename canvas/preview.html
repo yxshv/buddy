@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="katex/katex.min.css">
+<link rel="stylesheet" href="canvas.css">
+<script src="katex/katex.min.js"></script>
+<style>
+ html,body{background:#ececef !important}
+ .mock{position:fixed;left:60px;top:60px;width:620px;padding:30px 36px;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.1);font:15px/1.6 Georgia,serif;color:#222}
+ .mock h2{font:600 20px -apple-system;margin:0 0 10px}
+ .btn{display:inline-block;margin-top:14px;padding:6px 14px;background:#0a84ff;color:#fff;border-radius:6px;font:13px -apple-system}
+ .dark{position:fixed;left:60px;top:470px;width:620px;height:200px;background:#1e1e22;border-radius:10px;color:#ddd;font:14px Menlo;padding:20px;box-sizing:border-box}
+</style></head><body>
+<div class="mock"><h2>Diffraction grating</h2>
+<p>For a grating with spacing d, the maxima satisfy d sin θ = mλ. The angular dispersive power is the rate at which the angle changes with wavelength.</p>
+<p>Resolving power R = mN grows with the order and the number of lines illuminated.</p>
+<span class="btn" id="b">Calculate</span></div>
+<div class="dark">$ python fit.py --order 2<br>error: missing wavelength file<br>exit 1</div>
+<svg id="ink" xmlns="http://www.w3.org/2000/svg"></svg>
+<div id="cards"></div>
+<script src="canvas.js"></script>
+<script>
+// Dev preview: draws on mock content using real element positions. Not shipped in the app.
+const d=c=>buddy.draw(c);
+const word=(el,text)=>{const n=[...el.childNodes].find(n=>n.nodeType===3&&n.textContent.includes(text));const r=document.createRange();const i=n.textContent.indexOf(text);r.setStart(n,i);r.setEnd(n,i+text.length);const b=r.getBoundingClientRect();return [b.left,b.top,b.width,b.height];};
+const ps=document.querySelectorAll('.mock p');
+const eq=word(ps[0],'d sin θ = mλ');
+const rp=word(ps[1],'R = mN');
+const btn=document.getElementById('b').getBoundingClientRect();
+const err=word(document.querySelector('.dark'),'missing wavelength file');
+d({kind:"circle",rect:eq,label:"Grating equation"});
+d({kind:"underline",from:[rp[0],rp[1]+rp[3]+2],to:[rp[0]+rp[2],rp[1]+rp[3]+2],color:"blue"});
+d({kind:"highlight",rect:word(ps[0],'angular dispersive power')});
+d({kind:"box",rect:[btn.left,btn.top,btn.width,btn.height],label:"Run it",color:"green"});
+d({kind:"arrow",from:[err[0]+err[2]+170,err[1]+110],to:[err[0]+err[2]+6,err[1]+err[3]/2],label:"This is the problem",color:"orange"});
+d({kind:"note",at:[err[0]+err[2]+40,err[1]+150],text:"The script needs **wavelengths.csv** next to it. Units: $\\lambda$ in nm."});
+d({kind:"board",width:470,text:`# Angular dispersion
+Differentiate the grating equation $d\\sin\\theta = m\\lambda$:
+$$D = \\frac{d\\theta}{d\\lambda} = \\frac{m}{d\\cos\\theta}$$
+- grows with order $m$
+- larger when lines are closer (small $d$)
+## Resolving power
+$$R = \\frac{\\lambda}{\\Delta\\lambda} = mN$$
+So in 2nd order with $N = 5000$ lines, $R = 10^4$.`});
+</script></body></html>

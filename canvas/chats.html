@@ -1,0 +1,410 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>Chats</title>
+<link rel="stylesheet" href="katex/katex.min.css">
+<link rel="stylesheet" href="cards.css">
+<link rel="stylesheet" href="text.css">
+<style>
+  /* Buddy's chats window. The sidebar is transparent over the window's native sidebar material. */
+  :root {
+    --bg: #ffffff;
+    --ink: #1d1d1f;
+    --muted: #6e6e73;
+    --faint: #a1a1a6;
+    --rule: rgba(0, 0, 0, 0.08);
+    --code-bg: rgba(0, 0, 0, 0.05);
+    --row-hover: rgba(0, 0, 0, 0.04);
+    --row-sel: rgba(0, 0, 0, 0.08);
+    --field: rgba(0, 0, 0, 0.05);
+    --sheet: #f5f5f7;
+    --c: #0A84FF;
+    --bubble: #0A84FF;
+    --bubble-ink: #ffffff;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e20;
+      --ink: #f5f5f7;
+      --muted: #98989d;
+      --faint: #6e6e73;
+      --rule: rgba(255, 255, 255, 0.08);
+      --code-bg: rgba(255, 255, 255, 0.08);
+      --row-hover: rgba(255, 255, 255, 0.05);
+      --row-sel: rgba(255, 255, 255, 0.1);
+      --field: rgba(255, 255, 255, 0.07);
+      --sheet: rgba(255, 255, 255, 0.05);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body {
+    display: flex;
+    font: 14px/1.5 -apple-system, system-ui, sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    cursor: default;
+    overflow: hidden;
+  }
+
+  /* ---- Sidebar ---- */
+  aside {
+    width: 270px;
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    padding: 52px 10px 10px; /* room for the window buttons */
+    user-select: none;
+  }
+  #search {
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 6px 10px 6px 28px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--field) no-repeat 9px center / 13px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='5'/%3E%3Cpath d='M11 11l3.5 3.5'/%3E%3C/svg%3E");
+    font: inherit;
+    color: var(--ink);
+    outline: none;
+  }
+  #search:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent); }
+  #list { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+  .day { margin: 12px 8px 4px; font-size: 11px; font-weight: 600; color: var(--faint); letter-spacing: 0.02em; }
+  .day:first-child { margin-top: 2px; }
+  .row {
+    display: block;
+    width: 100%;
+    padding: 7px 10px 8px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+  }
+  .row:hover { background: var(--row-hover); }
+  .row:active { background: var(--row-sel); }
+  .row.sel { background: var(--row-sel); }
+  .row .t { display: block; font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .s { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .none { padding: 24px 10px; color: var(--muted); font-size: 13px; text-align: center; line-height: 1.4; }
+  .none b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 2px; }
+  .hits { margin: -4px 8px 6px; font-size: 11px; color: var(--faint); }
+  .row mark, .md mark.hit, .bubble mark { background: color-mix(in srgb, #ffd60a 55%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+
+  /* ---- Conversation ---- */
+  main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border-left: 1px solid var(--rule);
+  }
+  header {
+    flex: none;
+    height: 52px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--rule);
+    user-select: none;
+  }
+  header h1 { margin: 0; font-size: 14px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header span { color: var(--muted); font-size: 12px; white-space: nowrap; }
+  #thread { flex: 1; overflow-y: auto; overscroll-behavior: contain; position: relative; }
+  /* About 70 characters a line: long answers stay readable on a wide window. */
+  #messages { max-width: 700px; margin: 0 auto; padding: 24px 28px 40px; }
+  /* Hover actions: shown on hover or keyboard focus, never in the way of reading. */
+  .msg { position: relative; }
+  .copy {
+    position: absolute; top: -2px; right: 0;
+    height: 22px; padding: 0 8px; border: 0; border-radius: 6px;
+    background: var(--field); color: var(--muted);
+    font: 500 11px -apple-system, system-ui, sans-serif;
+    opacity: 0; transition: opacity 120ms ease;
+  }
+  .msg.user .copy { position: static; align-self: center; margin-right: 8px; }
+  .msg:hover .copy, .copy:focus-visible, .code:hover .copy { opacity: 1; }
+  .copy:hover { color: var(--ink); }
+  .copy:active { transform: scale(0.96); }
+  .copy.done { color: var(--c); opacity: 1; }
+  .md .code { position: relative; }
+  .md .code .copy { top: 6px; right: 6px; }
+  /* Back to the newest message when you've scrolled up and more arrives. */
+  #latest {
+    position: absolute; left: 50%; bottom: 16px; transform: translate(-50%, 8px);
+    height: 28px; padding: 0 12px; border: 0.5px solid var(--rule); border-radius: 14px;
+    background: var(--bg); color: var(--ink); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+    font: 600 12px -apple-system, system-ui, sans-serif;
+    opacity: 0; pointer-events: none; transition: opacity 160ms ease, transform 200ms var(--ease-out);
+  }
+  #latest.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .msg { margin: 0 0 18px; animation: rise 280ms var(--ease-out) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .msg.user { display: flex; justify-content: flex-end; }
+  .msg.user .bubble {
+    max-width: 78%;
+    padding: 8px 14px 9px;
+    border-radius: 18px;
+    background: var(--bubble);
+    color: var(--bubble-ink);
+    font-size: 14px;
+    white-space: pre-wrap;
+    user-select: text;
+  }
+  .who { display: flex; align-items: center; gap: 7px; margin: 0 0 5px; font-size: 12px; font-weight: 600; color: var(--muted); user-select: none; }
+  .who i {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: conic-gradient(from 200deg, #32d2ff, #0a84ff, #bf5af2, #ff375f, #32d2ff);
+    box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
+  }
+  .who time { font-weight: 400; color: var(--faint); }
+  .msg.buddy .md { font-size: 15px; line-height: 1.55; user-select: text; }
+  .msg .sheet {
+    margin-top: 10px;
+    padding: 16px 20px 18px;
+    border-radius: 14px;
+    background: var(--sheet);
+    border: 1px solid var(--rule);
+  }
+  .empty {
+    height: 100%;
+    display: grid;
+    place-content: center;
+    gap: 6px;
+    text-align: center;
+    color: var(--muted);
+    user-select: none;
+  }
+  .empty b { color: var(--ink); font-size: 15px; font-weight: 600; }
+  main { position: relative; }
+  @media (prefers-reduced-motion: reduce) { .msg { animation: none; } #latest { transition: opacity 120ms ease; transform: translate(-50%, 0); } }
+</style>
+<script src="katex/katex.min.js"></script>
+<script src="markdown.js"></script>
+<script src="cards.js"></script>
+</head>
+<body>
+<aside>
+  <input id="search" type="search" placeholder="Search" autocomplete="off" spellcheck="false">
+  <div id="list"></div>
+</aside>
+<main>
+  <header><h1 id="title">Chats</h1><span id="when"></span></header>
+  <div id="thread"><div id="messages"></div></div>
+  <button id="latest">↓ Latest</button>
+</main>
+<script>
+(() => {
+  const { markdown, escapeHTML } = window.BuddyMarkdown;
+  const $ = (id) => document.getElementById(id);
+  const list = $("list"), messages = $("messages"), thread = $("thread"), search = $("search");
+  let chats = [], selected = null, shownId = null, shownCount = 0;
+
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const time = (ms) => new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const daysAgo = (ms) => Math.round((startOfDay(new Date()) - startOfDay(new Date(ms))) / 86400000);
+  function day(ms) {
+    const diff = daysAgo(ms);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    if (diff < 7) return new Date(ms).toLocaleDateString([], { weekday: "long" });
+    return new Date(ms).toLocaleDateString([], { day: "numeric", month: "short", year: diff > 300 ? "numeric" : undefined });
+  }
+  // Sidebar sections: a few broad buckets instead of a header for every day.
+  function bucket(ms) {
+    const diff = daysAgo(ms);
+    if (diff === 0) return "Today";
+    if (diff === 1) return "Yesterday";
+    if (diff < 7) return "Previous 7 days";
+    if (diff < 30) return "Previous 30 days";
+    const d = new Date(ms);
+    return d.toLocaleDateString([], { month: "long", year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric" });
+  }
+  // Escapes `text` and wraps every match of q in <mark>. Matching happens on the raw text, so a query
+  // like "t" never lands inside an escape such as &lt;.
+  function mark(text, q) {
+    if (!q) return escapeHTML(text);
+    const lower = text.toLowerCase();
+    let out = "", from = 0, at;
+    while ((at = lower.indexOf(q, from)) !== -1) {
+      out += escapeHTML(text.slice(from, at)) + "<mark>" + escapeHTML(text.slice(at, at + q.length)) + "</mark>";
+      from = at + q.length;
+    }
+    return out + escapeHTML(text.slice(from));
+  }
+  function snippet(c, q) {
+    for (const m of c.messages) {
+      const text = plain(m.text + " " + (m.board || ""));
+      const i = text.toLowerCase().indexOf(q);
+      if (i >= 0) return (i > 14 ? "…" : "") + text.slice(Math.max(0, i - 14), i + 80); // the match near the start, so the row's ellipsis never hides it
+    }
+    return preview(c);
+  }
+  const title = (c) => c.messages.find((m) => m.role === "user")?.text || "Conversation";
+  const plain = (s) => (s || "").replace(/\$\$?([^$]+)\$\$?/g, "$1").replace(/[#*`=]+|(?<!\w)_+|_+(?!\w)/g, "").replace(/\s+/g, " ").trim();
+  function preview(c) {
+    const last = [...c.messages].reverse().find((m) => m.role === "buddy");
+    return plain(last?.text || last?.board || "");
+  }
+
+  function matches(c, q) {
+    if (!q) return true;
+    return c.messages.some((m) => (m.text + " " + (m.board || "")).toLowerCase().includes(q));
+  }
+
+  function renderList() {
+    const q = search.value.trim().toLowerCase();
+    const shown = chats.filter((c) => matches(c, q));
+    list.textContent = "";
+    if (!shown.length) {
+      list.innerHTML = chats.length
+        ? `<div class="none"><b>No chats mention “${escapeHTML(search.value.trim())}”</b>Search looks through every question and answer.</div>`
+        : `<div class="none"><b>No chats yet</b>Say “Hey Buddy” and ask something.</div>`;
+      return;
+    }
+    if (q) list.insertAdjacentHTML("beforeend", `<div class="hits">${shown.length} chat${shown.length === 1 ? "" : "s"}</div>`);
+    let lastDay = null;
+    for (const c of shown) {
+      const d = bucket(c.started);
+      if (d !== lastDay) {
+        lastDay = d;
+        const h = document.createElement("div");
+        h.className = "day";
+        h.textContent = d;
+        list.appendChild(h);
+      }
+      const row = document.createElement("button");
+      row.className = "row" + (c.id === selected ? " sel" : "");
+      const when = daysAgo(c.started) < 7 ? time(c.started) : day(c.started);
+      const sub = q ? snippet(c, q) : preview(c) || "No reply";
+      row.innerHTML = `<span class="t">${mark(title(c), q)}</span><span class="s">${escapeHTML(when)} · ${mark(sub, q)}</span>`;
+      row.onclick = () => select(c.id);
+      list.appendChild(row);
+    }
+  }
+
+  const copyBtn = '<button class="copy" tabindex="0">Copy</button>';
+  function messageHTML(m, i) {
+    if (m.role === "user") return `<div class="msg user" data-i="${i}">${copyBtn}<div class="bubble">${escapeHTML(m.text)}</div></div>`;
+    const text = m.text ? `<div class="md">${markdown(m.text).join("")}</div>` : "";
+    const sheet = m.board ? `<div class="md sheet">${markdown(m.board).join("")}</div>` : "";
+    const cards = window.BuddyCards.html(m.cards);
+    return `<div class="msg buddy" data-i="${i}"><div class="who"><i></i>Buddy <time>${escapeHTML(time(m.at))}</time></div>${(m.text || m.board) ? copyBtn : ""}${text}${sheet}${cards}</div>`;
+  }
+
+  function renderThread() {
+    const c = chats.find((x) => x.id === selected);
+    if (!c) {
+      $("title").textContent = "Chats";
+      $("when").textContent = "";
+      messages.innerHTML = "";
+      thread.innerHTML = "";
+      thread.appendChild(Object.assign(document.createElement("div"), {
+        className: "empty",
+        innerHTML: "<b>No chats yet</b><span>Say “Hey Buddy” and ask something.</span>",
+      }));
+      shownId = null;
+      return;
+    }
+    if (!thread.contains(messages)) { thread.textContent = ""; thread.appendChild(messages); }
+    $("title").textContent = title(c);
+    $("when").textContent = `${day(c.started)}, ${time(c.started)}`;
+    const atBottom = thread.scrollTop + thread.clientHeight >= thread.scrollHeight - 40;
+    if (c.id === shownId && c.messages.length >= shownCount) {
+      // The same chat grew: add only the new messages, and follow along if you were at the bottom.
+      messages.insertAdjacentHTML("beforeend", c.messages.slice(shownCount).map((m, k) => messageHTML(m, shownCount + k)).join(""));
+      addCodeCopy();
+      if (atBottom) thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" });
+      else if (c.messages.length > shownCount) $("latest").classList.add("show");
+    } else {
+      messages.innerHTML = c.messages.map(messageHTML).join("");
+      addCodeCopy();
+      $("latest").classList.remove("show");
+      for (const m of messages.children) m.style.animation = "none";
+      thread.scrollTop = thread.scrollHeight;
+    }
+    shownId = c.id;
+    shownCount = c.messages.length;
+  }
+
+  function select(id) {
+    selected = id;
+    renderList();
+    renderThread();
+  }
+
+  window.chats = {
+    // Newest first. `pick` selects that chat; otherwise the current selection stays.
+    load(data, pick) {
+      chats = data;
+      if (pick || !chats.some((c) => c.id === selected)) selected = pick || chats[0]?.id || null;
+      renderList();
+      renderThread();
+    },
+  };
+
+  // Code blocks get their own copy button (only the code, not the language label).
+  function addCodeCopy() {
+    for (const block of messages.querySelectorAll(".md .code:not([data-copy])")) {
+      block.dataset.copy = "1";
+      block.insertAdjacentHTML("beforeend", copyBtn);
+    }
+  }
+  function copied(button) {
+    button.textContent = "Copied";
+    button.classList.add("done");
+    setTimeout(() => { button.textContent = "Copy"; button.classList.remove("done"); }, 1400);
+  }
+  messages.addEventListener("click", async (e) => {
+    const button = e.target.closest(".copy");
+    if (!button) return;
+    const block = button.closest(".code");
+    let text;
+    if (block) {
+      text = block.querySelector("pre")?.innerText ?? "";
+    } else {
+      const c = chats.find((x) => x.id === selected);
+      const m = c?.messages[Number(button.closest(".msg").dataset.i)];
+      text = [m?.text, m?.board].filter(Boolean).join("\n\n");
+    }
+    try { await navigator.clipboard.writeText(text); } catch {
+      const area = Object.assign(document.createElement("textarea"), { value: text });
+      document.body.appendChild(area); area.select(); document.execCommand("copy"); area.remove();
+    }
+    copied(button);
+  });
+  $("latest").addEventListener("click", () => thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" }));
+  thread.addEventListener("scroll", () => {
+    if (thread.scrollTop + thread.clientHeight >= thread.scrollHeight - 40) $("latest").classList.remove("show");
+  }, { passive: true });
+
+  search.addEventListener("input", renderList);
+  addEventListener("keydown", (e) => {
+    if (e.metaKey && e.key === "f") { e.preventDefault(); search.focus(); search.select(); return; }
+    if (e.key === "Escape" && document.activeElement === search) { search.value = ""; renderList(); search.blur(); return; }
+    // Return in the search field opens the first match.
+    if (e.key === "Enter" && document.activeElement === search) {
+      const first = chats.find((c) => matches(c, search.value.trim().toLowerCase()));
+      if (first) { e.preventDefault(); select(first.id); search.blur(); }
+      return;
+    }
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    const q = search.value.trim().toLowerCase();
+    const shown = chats.filter((c) => matches(c, q));
+    const i = shown.findIndex((c) => c.id === selected);
+    const next = shown[Math.max(0, Math.min(shown.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))];
+    if (next) { e.preventDefault(); select(next.id); list.querySelector(".sel")?.scrollIntoView({ block: "nearest" }); }
+  });
+
+  window.webkit?.messageHandlers?.buddy?.postMessage("ready");
+})();
+</script>
+</body>
+</html>
