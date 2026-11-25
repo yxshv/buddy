@@ -97,6 +97,8 @@ final class Overlay {
     private var shrinkWork: DispatchWorkItem?
     private var dismissWork: DispatchWorkItem?
     private var dismissDelay: Double?
+    /// The panel came up (true) or went away (false).
+    var onVisibleChange: ((Bool) -> Void)?
 
     private var cursorWindows: [NSWindow] = []
     private var timer: Timer?
@@ -288,6 +290,7 @@ final class Overlay {
         dismissDelay = nil
         guard panel.visible else { return }
         withAnimation(panelSpring) { panel.visible = false }
+        onVisibleChange?(false)
         panelWindow.ignoresMouseEvents = true
         updateClearButton()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
@@ -317,6 +320,7 @@ final class Overlay {
         panelWindow.ignoresMouseEvents = false
         panelWindow.orderFrontRegardless()
         withAnimation(panelSpring) { panel.visible = true }
+        onVisibleChange?(true)
         updateClearButton()
     }
 

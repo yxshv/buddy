@@ -7,7 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var overlay: Overlay!
     private var lockKey: Hotkey!   // ⌃⌥L: listen until Return
     private var sendKey: Hotkey!   // Return, only while listening is locked
-    private var escKey: Hotkey!    // Esc, only while listening is locked
+    private var escKey: Hotkey!    // Esc, only while the panel is up: stop listening, stop the answer, then close
     private var parser: ReplyParser!
     private let listener = Listener()
     private let voice = Voice()
@@ -102,7 +102,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         sendKey = Hotkey(keyCode: UInt32(kVK_Return), modifiers: 0, enabled: false)
         sendKey.onPress = { [weak self] in self?.sendLocked() }
         escKey = Hotkey(keyCode: UInt32(kVK_Escape), modifiers: 0, enabled: false)
-        escKey.onPress = { [weak self] in self?.closePanel() }
+        escKey.onPress = { [weak self] in self?.escPressed() }
+        overlay.onVisibleChange = { [weak self] on in self?.escKey.setEnabled(on) }
 
         buildMenu()
         Permissions.shared.onChange = { [weak self] in self?.commandSettingsChanged() }
@@ -225,11 +226,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         listener.finishNow()
     }
 
-    /// Return and Esc are only taken from other apps while listening is locked.
+    /// Return is only taken from other apps while listening is locked (Esc while the panel is up).
     private func setLocked(_ on: Bool) {
         if !on { listener.held = false }
         sendKey.setEnabled(on)
-        escKey.setEnabled(on)
         overlay.setLocked(on)
     }
 
@@ -885,6 +885,65 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if let question = scene["confirm"] as? String { after(0.6) { self.overlay.ask(question) } }
         }
         after(scene["hold"] as? Double ?? 30) { NSApp.terminate(nil) }
+    }
+
+    /// Esc stops what's happening, one thing per press: listening first, then the answer being
+    /// worked out or spoken. With neither going on, it closes the panel.
+    private func escPressed() {
+        if talking {
+            stopListening()
+        } else if working {
+            stopWorking()
+        } else {
+            closePanel()
+        }
+    }
+
+    /// Thinking, transcribing, running a step or speaking (not waiting on the OK card).
+    private var working: Bool {
+        (claude.busy && permission == nil && pendingCommand == nil) || voice.isSpeaking || stepInFlight
+            || overlay.panel.phase == .thinking
+    }
+
+    private func stopListening() {
+        if answering {
+            // The OK card stays; its buttons and ⌃⌥Y / ⌃⌥N still answer it.
+            stopAnswerCapture()
+            overlay.ask(overlay.panel.question, touchID: overlay.panel.touchID)
+            return
+        }
+        setLocked(false)
+        talking = false
+        followingUp = false
+        captureIsFollowUp = false
+        turn += 1
+        listener.cancelCapture()
+        overlay.dropPending() // an empty panel goes; a chat stays
+        stopIfNotListening()
+    }
+
+    private func stopWorking() {
+        turn += 1
+        reply = "" // voice.stop() settles the turn: don't start listening for a follow-up
+        heldText = []
+        streamingSpeech = false
+        listenAfterSpeech = false
+        if !awaiting {
+            claude.cancel()
+            stepInFlight = false
+            queued.removeAll()
+            didActions.removeAll()
+            parser.reset()
+        }
+        voice.stop()
+        overlay.hideBuddy()
+        if awaiting {
+            overlay.ask(overlay.panel.question, touchID: overlay.panel.touchID)
+        } else {
+            if overlay.panel.turns.last?.answered != true { overlay.say("Stopped.") }
+            overlay.settle("Buddy")
+        }
+        stopIfNotListening()
     }
 
     /// The panel's close button: stop talking and drop anything pending.
